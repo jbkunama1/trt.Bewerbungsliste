@@ -7,7 +7,7 @@ services:
     container_name: trt-bewerbungsliste-backend
     working_dir: /app
     volumes:
-      - /opt/trt.Bewerbungsliste_panels/data:/app/data
+      - /opt/trt.Bewerbungsliste/data:/app/data
       - ./static:/app/static:ro
       - ./app.py:/app/app.py:ro
     environment:
