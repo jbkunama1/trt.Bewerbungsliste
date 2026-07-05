@@ -1,0 +1,12 @@
+
+version: "3.8"
+
+services:
+  trt-bewerbungsliste:
+    image: nginx:alpine
+    container_name: trt-bewerbungsliste
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    volumes:
+      - /opt/trt.Bewerbungsliste/html:/usr/share/nginx/html:ro
