@@ -1,136 +1,67 @@
 
+# trt.Bewerbungsliste (Panels + Flask + SQLite)
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
-![Static HTML](https://img.shields.io/badge/static-HTML%2FCSS%2FJS-lightgrey)
+![Flask](https://img.shields.io/badge/backend-Flask%2FSQLite-green)
 
+Zentrale Bewerbungs-Linkliste im Panel-Design, mit Flask-Backend und SQLite-Datenbank. Alle Nutzer:innen im LAN sehen dieselbe Liste (Jobs, Studium, FSJ etc.).
 
-# trt.Bewerbungsliste
+## Features
 
-Einfache Bewerbungs-Linkliste als statische Web-App (HTML, CSS, JS) zur Dokumentation von Bewerbungen (Jobs, Studium, FSJ etc.).
-
-Die App bietet:
-- Erfassung von Stelle/Studiengang, Bewerbungslink und Notizen (z. B. "angeschrieben am 05.07.26").
-- Zusatzfelder: Art der Bewerbung (E-Mail, Onlineportal, Post ...) und Rückmeldung (z. B. "Zusage am 20.07.26").
-- Checkboxes zum Markieren als erledigt.
-- Lokale Speicherung per `localStorage` im Browser.
-- Export der Liste als CSV-Tabelle zur Weiterverarbeitung in Excel/LibreOffice/Word.
+- Panel-Design mit Statistik-Karten, Dark-/Light-Theme (unverändert aus der ursprünglichen Version).
+- Formularfelder: Stelle/Studiengang, Bewerbungslink, Notizen (z. B. "angeschrieben am 05.07.26"), Art der Bewerbung, Rückmeldung.
+- Checkbox zum Markieren als erledigt.
+- Zentrale Speicherung in SQLite über eine Flask-REST-API – kein localStorage mehr.
+- "Erledigte entfernen"-Button löscht alle abgehakten Einträge zentral.
 
 ## Projektstruktur
 
 ```text
-trt.Bewerbungsliste/
-├─ docker-compose.yml   # Docker-Stack für Portainer / Docker
-├─ html/
-│  └─ index.html        # Bewerbungs-Linkliste (Web-App)
-└─ README.md
+trt.Bewerbungsliste_flask_panels/
+├─ app.py               # Flask-App mit SQLite-Backend & API
+├─ docker-compose.yml   # Docker-Stack (Port 8090 -> Flask 5000)
+├─ static/
+│  └─ index.html        # Frontend im Panel-Design, per fetch() an Flask/SQLite angebunden
+└─ LICENSE              # MIT-Lizenz
 ```
 
-Hinweis: Das Verzeichnis `html/` wird beim ersten Setup lokal angelegt und enthält die `index.html`.
+## API-Endpunkte
 
-## Lokales Setup (ohne Docker)
-
-1. Repository klonen:
-   ```bash
-   git clone https://github.com/dein-user/trt.Bewerbungsliste.git
-   cd trt.Bewerbungsliste
-   ```
-2. Datei `html/index.html` im Browser öffnen (Doppelklick oder `file://`-Pfad).
-
-## Docker-Stack für Portainer / Docker Compose
-
-Der Stack nutzt einen schlanken `nginx:alpine`-Container und veröffentlicht die App im LAN auf Port `8090`.
-
-### Vorbereitung
-
-1. Repository auf dem Docker-Host klonen:
-   ```bash
-   git clone https://github.com/dein-user/trt.Bewerbungsliste.git
-   cd trt.Bewerbungsliste
-   ```
-2. Ordner `html` anlegen und die App-Datei dort ablegen:
-   ```bash
-   mkdir -p html
-   cp index.html html/index.html
-   ```
-
-### Docker Compose (direkt auf dem Host)
-
-```bash
-# Im Projektverzeichnis
-docker compose up -d
-```
-
-Die App ist anschließend unter `http://<docker-host>:8090` im LAN erreichbar.
-
-### Portainer-Stack
-
-1. In Portainer auf **Stacks → Add stack** gehen.
-2. Als Name z. B. `trt-bewerbungsliste` wählen.
-3. Inhalt von `docker-compose.yml` aus diesem Repo in das Webformular kopieren.
-4. Deployen.
-
-Auch hier ist die App unter `http://<docker-host>:8090` erreichbar.
-
-## Hinweise zur Speicherung
-
-- Die Bewerbungen werden pro Browser/Client im `localStorage` gespeichert.
-- Bei Nutzung im LAN hat jede Person ihre eigene lokale Liste (unabhängig von anderen Clients).
-
-## Lizenz
-
-Dieses Projekt kann frei im schulischen Kontext genutzt, angepasst und erweitert werden.
-
+- `GET /api/applications` – alle Bewerbungen laden.
+- `POST /api/applications` – neue Bewerbung anlegen (title, url, description, type, feedback).
+- `PUT /api/applications/<id>` – Felder aktualisieren, z. B. `done`.
+- `DELETE /api/applications/<id>` – Eintrag löschen.
 
 ## Installation und Deployment
 
 ### 1. GitHub-Repository
 
-1. Auf GitHub ein neues Repository `trt.Bewerbungsliste` anlegen.
-2. Lokalen Projektordner initialisieren und pushen:
-   ```bash
-   cd trt.Bewerbungsliste
-   git init
-   git remote add origin https://github.com/<dein-user>/trt.Bewerbungsliste.git
-   git add .
-   git commit -m "Initial commit"
-   git push -u origin main
-   ```
+```bash
+cd trt.Bewerbungsliste_flask_panels
+git init
+git remote add origin https://github.com/<dein-user>/trt.Bewerbungsliste_flask_panels.git
+git add .
+git commit -m "Initial commit: Panels-Frontend + Flask + SQLite (fetch-basiert)"
+git branch -M main
+git push -u origin main
+```
 
 ### 2. Installation auf dem Docker-Host
 
-1. Repository auf dem Server klonen:
-   ```bash
-   git clone https://github.com/<dein-user>/trt.Bewerbungsliste.git
-   cd trt.Bewerbungsliste
-   ```
-2. Hostpfad `/opt/trt.Bewerbungsliste/html` anlegen und `index.html` dorthin kopieren:
-   ```bash
-   sudo mkdir -p /opt/trt.Bewerbungsliste/html
-   sudo cp html/index.html /opt/trt.Bewerbungsliste/html/index.html
-   ```
-3. Docker-Stack starten:
-   ```bash
-   docker compose up -d
-   ```
-4. Zugriff im LAN über:
-   ```
-   http://<docker-host>:8090
-   ```
+```bash
+git clone https://github.com/<dein-user>/trt.Bewerbungsliste_flask_panels.git
+cd trt.Bewerbungsliste_flask_panels
+sudo mkdir -p /opt/trt.Bewerbungsliste_panels/data
+docker compose up -d
+```
 
-### 3. Deployment über Portainer
+Zugriff im LAN über: `http://<docker-host>:8090`
 
-1. In Portainer unter **Stacks → Add stack** gehen.
-2. Stack-Name z. B. `trt-bewerbungsliste` vergeben.
-3. Inhalt der `docker-compose.yml` aus dem Repo in das Formular kopieren.
-4. Stack deployen.
-5. Sicherstellen, dass der Hostpfad `/opt/trt.Bewerbungsliste/html` existiert und `index.html` enthält (siehe Schritt 2.2 oben).
+### 3. Persistenz
 
+Die SQLite-Datenbank liegt im Volume `/opt/trt.Bewerbungsliste_panels/data` (Host) und bleibt bei Container-Neustarts erhalten. Alle Benutzer:innen im LAN sehen dieselben Einträge, unabhängig von Browser oder Gerät.
 
+## Lizenz
 
-## Logo
-
-Das Projekt enthält ein Logo `html/bewerbungsliste-logo.png`, das:
-- als Favicon in der Web-App (`<link rel="icon" ...>`)
-- und als Logo im Header (`<img src="bewerbungsliste-logo.png" ...>`) verwendet wird.
-
-Bei Bedarf kannst du das Logo durch eine eigene PNG-Datei mit gleichem Namen ersetzen.
+MIT License – frei nutzbar und anpassbar im schulischen Kontext.
