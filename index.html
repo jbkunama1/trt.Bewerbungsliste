@@ -392,7 +392,13 @@
     <header class="topbar">
       <div class="brand">
         <div class="logo" aria-hidden="true">
-          <img src="bewerbungsliste-logo.png" alt="Logo trt.Bewerbungsliste" style="width: 26px; height: 26px;" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 8.5H15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7.5 12H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7.5 15.5H12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M17.2 15.8L19.8 18.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="16.5" cy="14.5" r="3" stroke="currentColor" stroke-width="2"/>
+          </svg>
         </div>
         <div>
           <h1>Bewerbungs-Bewerbungslinkliste</h1>
@@ -439,12 +445,20 @@
             Notizen (z. B. Datum)
             <textarea id="descriptionInput" name="description" placeholder="Kurze Notizen (z. B. Datum) zum Bewerbungslink..."></textarea>
           </label>
+          <label>
+            Art der Bewerbung
+            <input id="typeInput" name="type" type="text" placeholder="z. B. E-Mail, Onlineportal, Post" />
+          </label>
+          <label>
+            Rückmeldung
+            <input id="feedbackInput" name="feedback" type="text" placeholder="z. B. keine Rückmeldung, Zusage am 20.07.26" />
+          </label>
           <div class="actions">
             <button class="btn btn-primary" type="submit">Eintrag speichern</button>
             <button class="btn btn-secondary" type="reset">Felder leeren</button>
           </div>
         </form>
-        <p class="hint">Hinweis: Deine Bewerbungen werden jetzt automatisch lokal im Browser gespeichert (localStorage). Wenn du den Browser schließt, bleiben die Einträge erhalten, solange du denselben Browser und dasselbe Gerät nutzt.</p>
+        <p class="hint">Hinweis: Dies ist die GitHub-Pages-Demoversion. Hier werden Bewerbungen nur lokal in deinem Browser gespeichert (localStorage). Für die zentrale Version mit Flask/SQLite im LAN nutze das Docker-Deployment aus dem Repository.</p>
       </section>
 
       <section class="panel list-panel" aria-labelledby="liste-title">
@@ -478,17 +492,37 @@
   </template>
 
   <script>
-    const appState = {
-      items: [
+    const STORAGE_KEY = 'trt-bewerbungsliste-items';
+
+    function loadFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (error) {
+        console.error('Fehler beim Laden aus localStorage', error);
+        return [];
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    let items = loadFromStorage();
+    if (!items.length) {
+      items = [
         {
           id: crypto.randomUUID(),
           title: 'Beispiel: FSJ im Sportverein',
           url: 'https://www.beispiel-fsj.de',
           description: 'Beispielhafter Bewerbungseintrag, damit du direkt siehst, wie die Liste aufgebaut ist.',
+          type: 'Onlineportal',
+          feedback: 'keine Rückmeldung',
           done: false,
-        }
-      ]
-    };
+        },
+      ];
+      saveToStorage();
+    }
 
     const htmlEl = document.documentElement;
     const toggleBtn = document.querySelector('[data-theme-toggle]');
@@ -498,6 +532,8 @@
     const titleInput = document.getElementById('titleInput');
     const urlInput = document.getElementById('urlInput');
     const descriptionInput = document.getElementById('descriptionInput');
+    const typeInput = document.getElementById('typeInput');
+    const feedbackInput = document.getElementById('feedbackInput');
     const totalCount = document.getElementById('totalCount');
     const doneCount = document.getElementById('doneCount');
     const openCount = document.getElementById('openCount');
@@ -518,8 +554,8 @@
     }
 
     function updateStats() {
-      const total = appState.items.length;
-      const done = appState.items.filter(item => item.done).length;
+      const total = items.length;
+      const done = items.filter(item => item.done).length;
       const open = total - done;
       totalCount.textContent = total;
       doneCount.textContent = done;
@@ -529,7 +565,7 @@
     function renderList() {
       listContainer.innerHTML = '';
 
-      if (!appState.items.length) {
+      if (!items.length) {
         listContainer.innerHTML = `
           <div class="empty-state">
             <strong>Noch keine Bewerbungen eingetragen.</strong>
@@ -543,7 +579,7 @@
       const ul = document.createElement('ul');
       ul.className = 'list';
 
-      appState.items.forEach(item => {
+      items.forEach(item => {
         const fragment = itemTemplate.content.cloneNode(true);
         const listItem = fragment.querySelector('.item');
         const checkbox = fragment.querySelector('.checkbox');
@@ -555,9 +591,14 @@
 
         title.textContent = item.title;
         description.textContent = item.description || 'Keine Notizen (z. B. Datum) ergänzt.';
+        if (meta) {
+          const typeText = item.type ? `Art: ${item.type}` : 'Art: nicht ergänzt';
+          const feedbackText = item.feedback ? `Rückmeldung: ${item.feedback}` : 'Rückmeldung: nicht ergänzt';
+          meta.textContent = `${typeText} · ${feedbackText}`;
+        }
         link.href = item.url;
         link.textContent = item.url;
-        checkbox.checked = item.done;
+        checkbox.checked = !!item.done;
 
         if (item.done) listItem.classList.add('done');
 
@@ -568,7 +609,7 @@
         });
 
         deleteBtn.addEventListener('click', () => {
-          appState.items = appState.items.filter(entry => entry.id !== item.id);
+          items = items.filter(entry => entry.id !== item.id);
           saveToStorage();
           renderList();
         });
@@ -585,12 +626,12 @@
       const title = titleInput.value.trim();
       const url = normalizeUrl(urlInput.value);
       const description = descriptionInput.value.trim();
-      const type = typeInput.value.trim();
-      const feedback = feedbackInput.value.trim();
+      const type = typeInput ? typeInput.value.trim() : '';
+      const feedback = feedbackInput ? feedbackInput.value.trim() : '';
 
       if (!title || !url) return;
 
-      appState.items.unshift({
+      items.unshift({
         id: crypto.randomUUID(),
         title,
         url,
@@ -607,7 +648,8 @@
     });
 
     clearDoneBtn.addEventListener('click', () => {
-      appState.items = appState.items.filter(item => !item.done);
+      items = items.filter(item => !item.done);
+      saveToStorage();
       renderList();
     });
 
