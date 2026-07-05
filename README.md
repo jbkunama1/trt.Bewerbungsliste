@@ -12,7 +12,7 @@ Repository: [jbkunama1/trt.Bewerbungsliste](https://github.com/jbkunama1/trt.Bew
 ## Features
 
 - Panel-Design mit Statistik-Karten, Dark-/Light-Theme.
-- Formularfelder: Stelle/Studiengang, Bewerbungslink, Notizen (z. B. "angeschrieben am 05.07.26"), Art der Bewerbung, Rückmeldung.
+- Formularfelder: Stelle/Studiengang, Bewerbungslink, Notizen, Datum der Bewerbung, Art der Bewerbung, Rückmeldung.
 - Checkbox zum Markieren als erledigt.
 - Zentrale Speicherung in SQLite über eine Flask-REST-API.
 - "Erledigte entfernen"-Button löscht alle abgehakten Einträge zentral.
@@ -32,7 +32,7 @@ trt.Bewerbungsliste/
 ## API-Endpunkte
 
 - `GET /api/applications` – alle Bewerbungen laden.
-- `POST /api/applications` – neue Bewerbung anlegen (title, url, description, type, feedback).
+- `POST /api/applications` – neue Bewerbung anlegen (title, url, description, type, feedback, application_date).
 - `PUT /api/applications/<id>` – Felder aktualisieren, z. B. `done`.
 - `DELETE /api/applications/<id>` – Eintrag löschen.
 
@@ -112,3 +112,24 @@ Alle Benutzer:innen im LAN sehen dieselbe zentrale Liste, da alle über dieselbe
 ## Lizenz
 
 MIT License – frei nutzbar und anpassbar im schulischen Kontext.
+
+### 6. Hinweis bei bestehender Datenbank: neues Feld "Datum der Bewerbung"
+
+Es wurde ein neues Feld `application_date` (Datum der Bewerbung) ergänzt. Falls bereits eine bestehende `bewerbungen.db` im Volume `/opt/trt.Bewerbungsliste/data` existiert, kennt diese die neue Spalte noch nicht.
+
+**Option A (empfohlen für Testumgebungen ohne wichtige Daten):** Alte Datenbank löschen, damit Flask sie beim Start neu mit dem passenden Schema anlegt.
+
+```bash
+sudo rm /opt/trt.Bewerbungsliste/data/bewerbungen.db
+```
+
+Danach Container/Stack neu starten.
+
+**Option B (Daten erhalten):** Spalte manuell per SQLite-Migration ergänzen.
+
+```bash
+sqlite3 /opt/trt.Bewerbungsliste/data/bewerbungen.db "ALTER TABLE applications ADD COLUMN application_date TEXT;"
+```
+
+Danach Container/Stack neu starten.
+

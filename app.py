@@ -25,6 +25,7 @@ def init_db():
         'description TEXT, '
         'type TEXT, '
         'feedback TEXT, '
+        'application_date TEXT, '
         'done INTEGER NOT NULL DEFAULT 0, '
         'created_at TEXT NOT NULL'
         ')'
@@ -38,7 +39,7 @@ def init_db():
 def list_applications():
     conn = get_db_connection()
     select_sql = (
-        'SELECT id, title, url, description, type, feedback, done, created_at '
+        'SELECT id, title, url, description, type, feedback, application_date, done, created_at '
         'FROM applications ORDER BY id DESC'
     )
     rows = conn.execute(select_sql).fetchall()
@@ -54,6 +55,7 @@ def create_application():
     description = (payload.get('description') or '').strip()
     type_ = (payload.get('type') or '').strip()
     feedback = (payload.get('feedback') or '').strip()
+    application_date = (payload.get('application_date') or '').strip()
 
     if not title or not url:
         return jsonify({'error': 'title and url are required'}), 400
@@ -62,10 +64,10 @@ def create_application():
     now = datetime.utcnow().isoformat(timespec='seconds')
     insert_sql = (
         'INSERT INTO applications '
-        '(title, url, description, type, feedback, done, created_at) '
-        'VALUES (?, ?, ?, ?, ?, 0, ?)'
+        '(title, url, description, type, feedback, application_date, done, created_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, 0, ?)'
     )
-    cur = conn.execute(insert_sql, (title, url, description, type_, feedback, now))
+    cur = conn.execute(insert_sql, (title, url, description, type_, feedback, application_date, now))
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
@@ -75,7 +77,7 @@ def create_application():
 @app.route('/api/applications/<int:app_id>', methods=['PUT'])
 def update_application(app_id):
     payload = request.get_json(force=True) or {}
-    allowed_fields = ('title', 'url', 'description', 'type', 'feedback', 'done')
+    allowed_fields = ('title', 'url', 'description', 'type', 'feedback', 'application_date', 'done')
     updates = {}
     for key in allowed_fields:
         if key in payload:

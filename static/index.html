@@ -446,6 +446,10 @@
             <textarea id="descriptionInput" name="description" placeholder="Kurze Notizen (z. B. Datum) zum Bewerbungslink..."></textarea>
           </label>
           <label>
+            Datum der Bewerbung
+            <input id="applicationDateInput" name="application_date" type="date" />
+          </label>
+          <label>
             Art der Bewerbung
             <input id="typeInput" name="type" type="text" placeholder="z. B. E-Mail, Onlineportal, Post" />
           </label>
@@ -504,6 +508,7 @@
     const descriptionInput = document.getElementById('descriptionInput');
     const typeInput = document.getElementById('typeInput');
     const feedbackInput = document.getElementById('feedbackInput');
+    const applicationDateInput = document.getElementById('applicationDateInput');
     const totalCount = document.getElementById('totalCount');
     const doneCount = document.getElementById('doneCount');
     const openCount = document.getElementById('openCount');
@@ -574,9 +579,10 @@
         title.textContent = item.title;
         description.textContent = item.description || 'Keine Notizen (z. B. Datum) ergänzt.';
         if (meta) {
+          const dateText = item.application_date ? `Beworben am: ${item.application_date}` : 'Beworben am: nicht angegeben';
           const typeText = item.type ? `Art: ${item.type}` : 'Art: nicht ergänzt';
           const feedbackText = item.feedback ? `Rückmeldung: ${item.feedback}` : 'Rückmeldung: nicht ergänzt';
-          meta.textContent = `${typeText} · ${feedbackText}`;
+          meta.textContent = `${dateText} · ${typeText} · ${feedbackText}`;
         }
         link.href = item.url;
         link.textContent = item.url;
@@ -626,6 +632,7 @@
       const description = descriptionInput.value.trim();
       const type = typeInput ? typeInput.value.trim() : '';
       const feedback = feedbackInput ? feedbackInput.value.trim() : '';
+      const applicationDate = applicationDateInput ? applicationDateInput.value : '';
 
       if (!title || !url) return;
 
@@ -633,7 +640,7 @@
         const res = await fetch('/api/applications', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, url, description, type, feedback }),
+          body: JSON.stringify({ title, url, description, type, feedback, application_date: applicationDate }),
         });
         if (!res.ok) throw new Error('Fehler beim Speichern');
         const { id } = await res.json();
@@ -644,6 +651,7 @@
           description,
           type,
           feedback,
+          application_date: applicationDate,
           done: 0,
         });
         form.reset();
