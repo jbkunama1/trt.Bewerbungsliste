@@ -1,18 +1,13 @@
-
 version: "3.8"
 
 services:
   trt-bewerbungsliste-backend:
-    image: python:3.11-slim
+    build: .
     container_name: trt-bewerbungsliste-backend
-    working_dir: /app
     volumes:
       - /opt/trt.Bewerbungsliste/data:/app/data
-      - ./static:/app/static:ro
-      - ./app.py:/app/app.py:ro
     environment:
       - BEWERBUNG_DB_PATH=/app/data/bewerbungen.db
     ports:
       - "8090:5000"
-    command: ["python", "app.py"]
     restart: unless-stopped
