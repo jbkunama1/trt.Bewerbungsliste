@@ -17,6 +17,7 @@ def get_db_connection():
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = get_db_connection()
+    # Tabelle erstellen falls nicht vorhanden (mit status-Feld)
     create_sql = (
         'CREATE TABLE IF NOT EXISTS applications ('
         'id INTEGER PRIMARY KEY AUTOINCREMENT, '
@@ -26,11 +27,17 @@ def init_db():
         'type TEXT, '
         'feedback TEXT, '
         'application_date TEXT, '
+        'status INTEGER NOT NULL DEFAULT 0, '
         'done INTEGER NOT NULL DEFAULT 0, '
         'created_at TEXT NOT NULL'
         ')'
     )
     conn.execute(create_sql)
+    # Migration: status-Spalte hinzufügen falls noch nicht vorhanden
+    try:
+        conn.execute('ALTER TABLE applications ADD COLUMN status INTEGER NOT NULL DEFAULT 0')
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
@@ -39,7 +46,7 @@ def init_db():
 def list_applications():
     conn = get_db_connection()
     select_sql = (
-        'SELECT id, title, url, description, type, feedback, application_date, done, created_at '
+        'SELECT id, title, url, description, type, feedback, application_date, status, done, created_at '
         'FROM applications ORDER BY id DESC'
     )
     rows = conn.execute(select_sql).fetchall()
@@ -64,8 +71,8 @@ def create_application():
     now = datetime.utcnow().isoformat(timespec='seconds')
     insert_sql = (
         'INSERT INTO applications '
-        '(title, url, description, type, feedback, application_date, done, created_at) '
-        'VALUES (?, ?, ?, ?, ?, ?, 0, ?)'
+        '(title, url, description, type, feedback, application_date, status, done, created_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)'
     )
     cur = conn.execute(insert_sql, (title, url, description, type_, feedback, application_date, now))
     conn.commit()
@@ -77,7 +84,7 @@ def create_application():
 @app.route('/api/applications/<int:app_id>', methods=['PUT'])
 def update_application(app_id):
     payload = request.get_json(force=True) or {}
-    allowed_fields = ('title', 'url', 'description', 'type', 'feedback', 'application_date', 'done')
+    allowed_fields = ('title', 'url', 'description', 'type', 'feedback', 'application_date', 'status', 'done')
     updates = {}
     for key in allowed_fields:
         if key in payload:
@@ -97,6 +104,8 @@ def update_application(app_id):
     for key, value in updates.items():
         if key == 'done':
             value = 1 if value else 0
+        if key == 'status':
+            value = int(value) if str(value).isdigit() else 0
         set_parts.append(key + ' = ?')
         values.append(value)
     values.append(app_id)
